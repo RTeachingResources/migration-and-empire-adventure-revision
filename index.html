@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QS History Quest: Migration & Empire (1830–1939)</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Press Start 2P for GBC Retro UI, Inter & Lora for Reading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Lora', 'serif'],
+          },
+          colors: {
+            gbcBg: '#0f380f',
+            gbcDark: '#0f380f',
+            gbcMidDark: '#306230',
+            gbcMidLight: '#8bac0f',
+            gbcLight: '#9bbc0f',
+            retroYellow: '#f7d51d',
+            retroBlue: '#209cee',
+            retroRed: '#e76e55',
+            retroGreen: '#92cc41'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #07090e;
+      color: #f1f5f9;
+      min-height: 100vh;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* NES/GBC Border Frame */
+    .pixel-box {
+      background-color: #1a1c23;
+      border: 4px solid #9bbc0f;
+      box-shadow: inset -4px -4px 0px #0f380f, inset 4px 4px 0px #8bac0f, 0 8px 20px rgba(0,0,0,0.6);
+      border-radius: 8px;
+    }
+
+    .pixel-box-gold {
+      background-color: #1e1910;
+      border: 4px solid #f7d51d;
+      box-shadow: inset -4px -4px 0px #705000, inset 4px 4px 0px #ffe463;
+      border-radius: 8px;
+    }
+
+    .pixel-btn {
+      background-color: #306230;
+      color: #9bbc0f;
+      border: 3px solid #8bac0f;
+      box-shadow: 0 4px 0 #0f380f;
+      font-family: 'Press Start 2P', monospace;
+      transition: all 0.1s ease;
+    }
+    .pixel-btn:hover:not(:disabled) {
+      background-color: #8bac0f;
+      color: #0f380f;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #0f380f;
+    }
+    .pixel-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0f380f;
+    }
+
+    .pixel-btn-red {
+      background-color: #8b0000;
+      color: #ffc0cb;
+      border: 3px solid #e76e55;
+      box-shadow: 0 4px 0 #4a0000;
+    }
+    .pixel-btn-red:hover:not(:disabled) {
+      background-color: #e76e55;
+      color: #200;
+      box-shadow: 0 6px 0 #4a0000;
+    }
+
+    /* D-Pad Buttons */
+    .dpad-btn {
+      background: #2a2d3d;
+      border: 2px solid #525875;
+      box-shadow: active 0 0 0 #000;
+      color: #fff;
+    }
+    .dpad-btn:active {
+      background: #4ade80;
+      color: #000;
+    }
+
+    /* Canvas sharp rendering */
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f380f; }
+    ::-webkit-scrollbar-thumb { background: #8bac0f; border-radius: 4px; }
+  </style>
+</head>
+<body class="font-sans antialiased flex flex-col justify-between min-h-screen p-2 md:p-4">
+
+  <!-- TOP HEADER HUD -->
+  <header class="max-w-4xl w-full mx-auto mb-2">
+    <div class="pixel-box p-3 flex flex-col sm:flex-row items-center justify-between gap-2 border-emerald-400">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🎮</span>
+        <div>
+          <h1 class="font-pixel text-xs md:text-sm text-retroYellow tracking-wider">
+            QS HISTORY QUEST
+          </h1>
+          <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wide">
+            Migration & Empire (1830–1939) • National 5 2D RPG
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1.5 rounded bg-slate-900 text-[10px] font-pixel text-emerald-300 border border-emerald-500/50 hover:bg-slate-800">
+          🔊 AUDIO: ON
+        </button>
+        <button onclick="openPartyModal()" class="px-3 py-1.5 rounded bg-slate-900 text-[10px] font-pixel text-yellow-300 border border-yellow-500/50 hover:bg-slate-800">
+          🎒 PARTY (<span id="partyCountBadge">0</span>/6)
+        </button>
+        <button onclick="openTeacherModal()" class="px-3 py-1.5 rounded bg-amber-950 text-[10px] font-pixel text-amber-200 border border-amber-500/50 hover:bg-amber-900">
+          ⚙️ TEACHER
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SCREEN 1: CHARACTER CREATION / CUSTOMIZATION -->
+  <div id="customizationScreen" class="max-w-4xl w-full mx-auto flex-1 flex flex-col items-center justify-center p-2">
+    <div class="pixel-box-gold p-6 max-w-xl w-full flex flex-col gap-5 shadow-2xl">
+      <div class="text-center border-b border-yellow-600/40 pb-3">
+        <h2 class="font-pixel text-sm text-retroYellow">NEW RESEARCHER TRAINER</h2>
+        <p class="text-xs text-slate-300 font-serif mt-1">Customize your character before entering the QS Migration & Empire region!</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        <!-- Live Avatar Canvas Preview -->
+        <div class="flex flex-col items-center justify-center bg-slate-950 p-4 rounded-xl border-2 border-yellow-500/50">
+          <span class="font-pixel text-[10px] text-slate-400 mb-2">TRAINER PREVIEW</span>
+          <canvas id="avatarPreviewCanvas" width="96" height="96" class="w-24 h-24 bg-slate-900 rounded border border-slate-700"></canvas>
+          <span id="previewNameLabel" class="font-pixel text-xs text-retroYellow mt-2">Scholar</span>
+        </div>
+
+        <!-- Customization Controls -->
+        <div class="flex flex-col gap-3 text-xs">
+          <div>
+            <label class="font-pixel text-[10px] text-emerald-400 block mb-1">TRAINER NAME:</label>
+            <input type="text" id="custName" value="Scholar" maxlength="12" oninput="updateAvatarPreview()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-pixel text-xs focus:outline-none focus:border-yellow-400">
+          </div>
+
+          <div>
+            <label class="font-pixel text-[10px] text-emerald-400 block mb-1">HAIR / HAT STYLE:</label>
+            <select id="custHairStyle" onchange="updateAvatarPreview()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white text-xs focus:outline-none">
+              <option value="cap">Scholar Cap</option>
+              <option value="short">Short Crop</option>
+              <option value="long">Long Flowing</option>
+              <option value="bun">Top Bun</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="font-pixel text-[9px] text-slate-300 block mb-1">SKIN:</label>
+              <input type="color" id="custSkinColor" value="#ffdbac" onchange="updateAvatarPreview()" class="w-full h-8 bg-slate-900 rounded cursor-pointer border border-slate-700">
+            </div>
+            <div>
+              <label class="font-pixel text-[9px] text-slate-300 block mb-1">HAIR:</label>
+              <input type="color" id="custHairColor" value="#4a2e00" onchange="updateAvatarPreview()" class="w-full h-8 bg-slate-900 rounded cursor-pointer border border-slate-700">
+            </div>
+            <div>
+              <label class="font-pixel text-[9px] text-slate-300 block mb-1">OUTFIT:</label>
+              <input type="color" id="custOutfitColor" value="#0284c7" onchange="updateAvatarPreview()" class="w-full h-8 bg-slate-900 rounded cursor-pointer border border-slate-700">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="startGameWorld()" class="pixel-btn w-full py-3.5 text-xs rounded-xl uppercase tracking-widest mt-2">
+        🚀 START HISTORICAL QUEST
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: GAME WORLD CANVAS & CONTROLS -->
+  <div id="gameWorldScreen" class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-2 hidden">
+    <!-- Map Info Header Bar -->
+    <div class="pixel-box px-4 py-2 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <span class="text-base">📍</span>
+        <span id="currentTownLabel" class="font-pixel text-[11px] text-retroYellow">Newhaven Port (Booklet 1)</span>
+      </div>
+      <div class="flex items-center gap-2 text-[10px] font-pixel text-emerald-400">
+        <span>BADGES:</span>
+        <div id="badgeDisplayContainer" class="flex gap-1">
+          <span title="Port Badge" class="opacity-30">⚓</span>
+          <span title="Guild Badge" class="opacity-30">🏭</span>
+          <span title="Croft Badge" class="opacity-30">🏔️</span>
+          <span title="Empire Badge" class="opacity-30">🌍</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2D Canvas Overworld Viewport -->
+    <div class="relative w-full flex justify-center bg-black rounded-lg overflow-hidden border-4 border-slate-700 shadow-2xl">
+      <canvas id="worldCanvas" width="640" height="480" class="max-w-full h-auto"></canvas>
+
+      <!-- Location Prompt Overlay -->
+      <div id="townBannerNotice" class="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-950/90 border-2 border-yellow-400 px-4 py-1.5 rounded-full font-pixel text-[10px] text-retroYellow shadow-xl transition-all duration-300 opacity-0 pointer-events-none">
+        ENTERING NEWHAVEN PORT
+      </div>
+    </div>
+
+    <!-- TOUCH D-PAD & ACTION CONTROLS (FOR MOBILE/TOUCH & KEYBOARD HELP) -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-2 bg-slate-900/80 rounded-xl border border-slate-800">
+      <div class="text-[11px] text-slate-400 font-serif">
+        <span class="font-pixel text-[10px] text-emerald-400 block">CONTROLS:</span>
+        Use <kbd class="px-1 bg-slate-800 rounded font-mono text-white">WASD</kbd> or <kbd class="px-1 bg-slate-800 rounded font-mono text-white">Arrow Keys</kbd> to move. Walk in <span class="text-green-400 font-semibold">Tall Grass 🌿</span> for wild HistoriMon! Enter <span class="text-yellow-400 font-semibold">Gyms 🏛️</span> to battle Leaders!
+      </div>
+
+      <!-- On-Screen Touch D-Pad -->
+      <div class="grid grid-cols-3 gap-1 w-32 h-24 flex-shrink-0">
+        <div></div>
+        <button onmousedown="handleDpadInput('up')" ontouchstart="handleDpadInput('up')" class="dpad-btn rounded-t-lg font-pixel text-xs">▲</button>
+        <div></div>
+        <button onmousedown="handleDpadInput('left')" ontouchstart="handleDpadInput('left')" class="dpad-btn rounded-l-lg font-pixel text-xs">◄</button>
+        <button onmousedown="handleDpadInput('down')" ontouchstart="handleDpadInput('down')" class="dpad-btn rounded-b-lg font-pixel text-xs">▼</button>
+        <button onmousedown="handleDpadInput('right')" ontouchstart="handleDpadInput('right')" class="dpad-btn rounded-r-lg font-pixel text-xs">►</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: WILD HISTORIMON ENCOUNTER MODAL -->
+  <div id="wildEncounterModal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-3 hidden">
+    <div class="pixel-box-gold max-w-lg w-full p-5 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-yellow-500/40 pb-2">
+        <span class="font-pixel text-xs text-retroYellow flex items-center gap-2">
+          <span>🌿</span> WILD HISTORIMON ENCOUNTER!
+        </span>
+        <span id="wildAreaBookletBadge" class="font-pixel text-[9px] text-emerald-400 bg-slate-950 px-2 py-0.5 rounded">
+          BOOKLET 1
+        </span>
+      </div>
+
+      <!-- Wild Creature Visual Card -->
+      <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-xl border border-yellow-500/30">
+        <div id="wildCreatureSprite" class="w-20 h-20 bg-slate-900 rounded-lg flex items-center justify-center text-4xl border border-slate-700">
+          🥔
+        </div>
+        <div>
+          <h3 id="wildCreatureName" class="font-pixel text-sm text-retroYellow">Navvie-Spud</h3>
+          <p id="wildCreatureDesc" class="text-xs text-slate-300 font-serif mt-1 leading-relaxed">
+            A hardy companion symbolizing the Irish laborers who built Scotland's railways and canals.
+          </p>
+        </div>
+      </div>
+
+      <!-- Question Challenge for Capture -->
+      <div class="flex flex-col gap-2">
+        <span class="font-pixel text-[10px] text-cyan-300">ANSWER CORRECTLY TO THROW KNOWLEDGE BALL:</span>
+        <h4 id="wildQuestionPrompt" class="font-serif text-xs md:text-sm text-slate-100 font-semibold leading-relaxed">
+          Loading wild question...
+        </h4>
+      </div>
+
+      <!-- 4 Option Buttons -->
+      <div id="wildOptionsGrid" class="grid grid-cols-1 gap-2">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Debrief Box -->
+      <div id="wildDebriefBox" class="hidden p-3 rounded bg-slate-900 border border-emerald-500/50 text-xs font-serif text-slate-200">
+        <span class="font-pixel text-[10px] text-yellow-400 block mb-1">📚 QS REVISION DEBRIEF:</span>
+        <p id="wildDebriefText" class="text-slate-300"></p>
+        <button onclick="finishWildEncounter()" class="pixel-btn w-full mt-3 py-2 text-[10px]">CONTINUE QUEST</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: GYM LEADER BATTLE MODAL -->
+  <div id="gymBattleModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-3 hidden">
+    <div class="pixel-box max-w-2xl w-full p-5 border-emerald-400 flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Gym Header -->
+      <div class="flex items-center justify-between border-b border-emerald-500/40 pb-2">
+        <span class="font-pixel text-xs text-retroYellow flex items-center gap-2">
+          <span>🏛️</span> QS GYM LEADER BATTLE
+        </span>
+        <span id="gymQuestionCounter" class="font-pixel text-[10px] text-emerald-400">
+          QUESTION 1 OF 10
+        </span>
+      </div>
+
+      <!-- Battle Health / Knowledge Bars HUD -->
+      <div class="grid grid-cols-2 gap-4 bg-slate-950 p-3 rounded-xl border border-slate-800">
+        <!-- Player Stats -->
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-[10px] font-pixel text-emerald-400">
+            <span id="gymPlayerName">Scholar</span>
+            <span id="gymPlayerHpText">100 HP</span>
+          </div>
+          <div class="w-full h-3 bg-slate-900 rounded-full border border-slate-700 overflow-hidden">
+            <div id="gymPlayerHpBar" class="h-full bg-gradient-to-r from-emerald-500 to-green-400 w-full transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Leader Stats -->
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-[10px] font-pixel text-rose-400">
+            <span id="gymLeaderHpText">100 HP</span>
+            <span id="gymLeaderName">Leader Leith</span>
+          </div>
+          <div class="w-full h-3 bg-slate-900 rounded-full border border-slate-700 overflow-hidden dir-rtl">
+            <div id="gymLeaderHpBar" class="h-full bg-gradient-to-l from-rose-600 to-red-500 w-full transition-all duration-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Prompt Box -->
+      <div class="flex flex-col gap-2">
+        <h3 id="gymQuestionPrompt" class="font-serif text-sm md:text-base text-slate-100 font-semibold leading-relaxed">
+          Loading gym leader question...
+        </h3>
+      </div>
+
+      <!-- Options Grid -->
+      <div id="gymOptionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Gym Debrief Box -->
+      <div id="gymDebriefBox" class="hidden p-3.5 rounded-lg bg-slate-900 border border-yellow-500/50 text-xs font-serif text-slate-200">
+        <span class="font-pixel text-[10px] text-yellow-400 block mb-1">📚 QS EXAM REBRIEF:</span>
+        <p id="gymDebriefText" class="text-slate-300 leading-relaxed"></p>
+        <button onclick="advanceGymQuestion()" class="pixel-btn w-full mt-3 py-2.5 text-[10px]">NEXT GYM QUESTION ➔</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCREEN 5: PARTY & BADGES MODAL -->
+  <div id="partyModal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-3 hidden">
+    <div class="pixel-box max-w-xl w-full p-5 border-yellow-400 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-yellow-500/40 pb-2">
+        <h3 class="font-pixel text-xs text-retroYellow">🎒 RESEARCH PARTY & BADGES</h3>
+        <button onclick="closePartyModal()" class="text-slate-400 hover:text-white font-bold text-base">✕</button>
+      </div>
+
+      <!-- Captured Party Grid (6 Slots) -->
+      <div>
+        <span class="font-pixel text-[10px] text-emerald-400 block mb-2">CAPTURED HISTORIMON (UP TO 6):</span>
+        <div id="partyGridContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- Slots rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Badges Earned Section -->
+      <div class="border-t border-slate-800 pt-3">
+        <span class="font-pixel text-[10px] text-yellow-400 block mb-2">EARNED GYM BADGES:</span>
+        <div id="partyBadgesList" class="grid grid-cols-2 gap-2 text-xs font-pixel">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 6: TEACHER EDITOR MODAL -->
+  <div id="teacherModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-3 hidden">
+    <div class="pixel-box max-w-3xl w-full p-5 border-amber-500 flex flex-col gap-3 max-h-[90vh]">
+      <div class="flex items-center justify-between border-b border-amber-500/40 pb-2">
+        <h3 class="font-pixel text-xs text-amber-300">⚙️ TEACHER EDITOR SUITE (QS JSON)</h3>
+        <button onclick="closeTeacherModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 font-serif">Inspect or edit the underlying 40-question QS National 5 dataset across all 4 booklets.</p>
+      <textarea id="teacherJsonArea" class="w-full flex-1 min-h-[300px] p-3 rounded bg-slate-950 font-mono text-xs text-emerald-400 border border-slate-700 focus:outline-none"></textarea>
+      <div class="flex items-center justify-between pt-2">
+        <button onclick="resetDefaultTeacherDataset()" class="pixel-btn-red px-3 py-2 text-[9px] rounded">RESTORE DEFAULTS</button>
+        <div class="flex gap-2">
+          <button onclick="closeTeacherModal()" class="px-3 py-2 rounded bg-slate-800 text-xs font-pixel text-slate-300">CANCEL</button>
+          <button onclick="saveTeacherDataset()" class="pixel-btn px-4 py-2 text-[9px] rounded">SAVE DATASET</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script>
+    /* ==========================================================================
+       1. COMPLETE QS BOOKLETS 1-4 DATASET (40 QUESTIONS TOTAL)
+       ========================================================================== */
+    const DEFAULT_BOOKLETS_DATA = [
+      {
+        bookletId: 1,
+        townName: "Newhaven Port",
+        gymLeaderName: "Leader Leith",
+        badgeName: "Port Badge",
+        badgeSymbol: "⚓",
+        questions: [
+          {
+            prompt: "Which area in Coatbridge became known as 'Little Ireland' due to dense Irish settlement?",
+            options: ["Coatbridge", "The Gorbals", "Pollockshields", "Bellshill"],
+            correctIndex: 0,
+            debrief: "Coatbridge became known as 'Little Ireland' because so many Irish immigrants settled there to work in the expanding coal and iron industries."
+          },
+          {
+            prompt: "Where did wealthy Jewish families predominantly settle in Glasgow after moving from the Gorbals?",
+            options: ["Pollockshields", "Ayr", "Coatbridge", "Falkirk"],
+            correctIndex: 0,
+            debrief: "While working-class Jewish families initially settled in the Gorbals, wealthier families moved to Pollockshields."
+          },
+          {
+            prompt: "Why did many Lithuanian immigrants settle in Lanarkshire towns like Bellshill and Mossend?",
+            options: ["To escape agricultural depression and avoid Russian army conscription", "To start ice-cream businesses", "To work in coastal shipping", "To trade in tobacco"],
+            correctIndex: 0,
+            debrief: "Lithuanians fled an agricultural depression in their homeland and escaped forced conscription into the Russian army, finding work in Lanarkshire ironworks."
+          },
+          {
+            prompt: "What major push factor forced millions of Irish people to move to Scotland during the 1840s?",
+            options: ["The Irish Potato Famine causing starvation", "Violent religious pogroms", "Drought wiping out wheat", "Forced army conscription"],
+            correctIndex: 0,
+            debrief: "The Irish Potato Famine of the 1840s destroyed the primary food crop, causing mass starvation and pushing millions to seek refuge in Scotland."
+          },
+          {
+            prompt: "How did Scottish wages compare to Irish wages for immigrant workers between 1830 and 1939?",
+            options: ["Wages in Scotland were often up to six times higher", "Wages were identical in both countries", "Irish wages were twice as high", "Scotland paid workers only in food"],
+            correctIndex: 0,
+            debrief: "Scotland offered much higher wage potential—often up to six times higher than agricultural wages available in Ireland."
+          },
+          {
+            prompt: "Which Indian raw material was shipped to Dundee factories, creating vital trade links within the Empire?",
+            options: ["Jute from Calcutta", "Cotton from Bombay", "Tea from Assam", "Silk from Madras"],
+            correctIndex: 0,
+            debrief: "Raw jute imported from Calcutta in India supplied Dundee's textile mills, creating massive economic links across the British Empire."
+          },
+          {
+            prompt: "Why was Glasgow nicknamed the 'Second City of the Empire' during the 19th century?",
+            options: ["Merchants invested vast wealth gained from Empire trade into the city", "It had the second largest population in Europe", "It was the capital city of Scotland", "It was built entirely by imperial soldiers"],
+            correctIndex: 0,
+            debrief: "Glasgow earned this title as tobacco and sugar merchants brought back enormous fortunes from imperial trade, investing in civic architecture and industry."
+          },
+          {
+            prompt: "Which Italian city or region sent immigrants who fled drought and poverty to settle in Ayr and Glasgow?",
+            options: ["Italy", "Spain", "Lithuania", "Russia"],
+            correctIndex: 0,
+            debrief: "Italian immigrants fled drought and economic poverty, coming to Scottish towns like Ayr, Glasgow, and Inverclyde after being refused entry to America."
+          },
+          {
+            prompt: "Which group of refugees moved to Glasgow to escape violent religious pogroms in Russia?",
+            options: ["Jewish immigrants", "Lithuanian miners", "Italian peddlers", "Ulster Protestants"],
+            correctIndex: 0,
+            debrief: "Jewish refugees fled violent religious pogroms in Tsarist Russia, settling in urban areas like the Gorbals in Glasgow."
+          },
+          {
+            prompt: "How did cheap transport across the Irish Sea encourage immigration to Scotland?",
+            options: ["Boat travel was short, easy, and very affordable for poor families", "The British government paid for all steamship tickets", "Trains connected Ireland directly to Glasgow", "Immigrants walked across land bridges"],
+            correctIndex: 0,
+            debrief: "The short distance across the Irish Sea and low steamship deck fares made travel to Scotland affordable for poor Irish families."
+          }
+        ]
+      },
+      {
+        bookletId: 2,
+        townName: "Industrial Glasgow",
+        gymLeaderName: "Leader Ironwork",
+        badgeName: "Guild Badge",
+        badgeSymbol: "🏭",
+        questions: [
+          {
+            prompt: "By 1861, what percentage of coal miners in Coatbridge were born in Ireland?",
+            options: ["45% of coal miners", "10% of coal miners", "80% of coal miners", "25% of coal miners"],
+            correctIndex: 0,
+            debrief: "By 1861, Irish immigrants made up 45% of the coal mining workforce in Coatbridge, undertaking heavy underground labor."
+          },
+          {
+            prompt: "What nickname was given to early Italian ice-cream sellers who sold from wheelbarrows in Scottish streets?",
+            options: ["Hokey pokey men", "Navvies", "Peddlers", "Craftsmen"],
+            correctIndex: 0,
+            debrief: "Italian ice-cream vendors were nicknamed 'hokey pokey men' (derived from the Italian phrase 'ecco un poco' meaning 'here is a little')."
+          },
+          {
+            prompt: "Why were Italian cafes sometimes viewed with hostility or disapproval by some Scots?",
+            options: ["They remained open on the Sabbath (Sunday)", "They refused to serve hot drinks", "They charged excessive prices", "They opened only at night"],
+            correctIndex: 0,
+            debrief: "Strict Sabbatarian Scots criticized Italian cafe owners for opening their businesses on Sundays (the Sabbath) to serve ice cream and refreshments."
+          },
+          {
+            prompt: "How did the Catholic Church assist illiterate Irish immigrants arriving in Scottish industrial cities?",
+            options: ["Priests wrote letters home for immigrants who could not read or write", "Priests paid for all steamship travel tickets", "The Church provided free land in the countryside", "The Church ran heavy industrial ironworks"],
+            correctIndex: 0,
+            debrief: "Catholic priests played a key social role by writing letters home to Ireland for illiterate workers, as well as founding schools, charities, and football clubs."
+          },
+          {
+            prompt: "Which epidemic disease spread rapidly through Scottish slum housing due to dirty, contaminated water supplies?",
+            options: ["Cholera", "Smallpox", "Malaria", "Scurvy"],
+            correctIndex: 0,
+            debrief: "Cholera claimed thousands of lives in overcrowded immigrant slum housing due to inadequate sanitation and sewage contaminating water pumps."
+          },
+          {
+            prompt: "What legislation was passed by the British Parliament in 1905 to restrict immigrants from outside the British Empire?",
+            options: ["The Aliens Act 1905", "The Scottish Settlement Act", "The Emigration Restrictions Bill", "The Imperial Border Act"],
+            correctIndex: 0,
+            debrief: "The Aliens Act 1905 was introduced to limit non-Empire immigration into Britain, targeting groups such as Eastern European Jewish refugees."
+          },
+          {
+            prompt: "What key infrastructure projects were built by Irish 'Navvies' across Scotland?",
+            options: ["Railways, canals, and roads", "Granite pylons for bridges", "Tea plantations", "Highland croft houses"],
+            correctIndex: 0,
+            debrief: "Irish 'Navvies' (navigator laborers) provided essential muscle power to construct Scotland's railways, canals, and roads."
+          },
+          {
+            prompt: "Which trade became a major area of employment for Jewish immigrants settling in Glasgow?",
+            options: ["Tailoring and clothing repair", "Coal mining", "Granite quarrying", "Jute spinning"],
+            correctIndex: 0,
+            debrief: "A large number of Jewish tailors established successful tailoring and garment repair businesses in Glasgow."
+          },
+          {
+            prompt: "Which football clubs were established by the Catholic Church to create community spaces for Irish immigrants?",
+            options: ["Celtic and Hibernian", "Rangers and Hearts", "Aberdeen and Dundee", "Kilmarnock and Falkirk"],
+            correctIndex: 0,
+            debrief: "The Catholic Church helped establish football clubs such as Hibernian (1875) in Edinburgh and Celtic (1887) in Glasgow to support Irish communities."
+          },
+          {
+            prompt: "Why did some Scottish workers accuse Irish immigrants of undercutting their wages?",
+            options: ["Irish laborers were often forced to accept lower pay rates due to poverty", "Irish workers refused to join unions", "Irish workers worked fewer hours", "Irish workers were paid directly by the government"],
+            correctIndex: 0,
+            debrief: "Desperate for employment, many Irish immigrants took jobs for lower wages, leading some Scottish workers to accuse them of pushing down overall wage rates."
+          }
+        ]
+      },
+      {
+        bookletId: 3,
+        townName: "Highland Croft Village",
+        gymLeaderName: "Leader Croft",
+        badgeName: "Croft Badge",
+        badgeSymbol: "🏔️",
+        questions: [
+          {
+            prompt: "Why did many Highland landowners evict crofters from their homes during the Highland Clearances?",
+            options: ["To clear the land for more profitable sheep grazing", "To build massive cotton factories", "To plant dense timber forests", "To build royal summer palaces"],
+            correctIndex: 0,
+            debrief: "Landowners discovered that crofting yielded poor financial returns, so they forcibly evicted crofting families to make room for lucrative sheep farming."
+          },
+          {
+            prompt: "What assistance did the Highland and Island Emigration Society (HIES) provide to poor crofter families?",
+            options: ["They funded passage to Australia to allow crofters to farm new land", "They provided free houses in Glasgow slums", "They bought steamships for crofters to keep", "They paid crofters to join the British Army"],
+            correctIndex: 0,
+            debrief: "The HIES raised funds to assist impoverished Highland crofters with travel costs, sending them to Australia to clear land and farm."
+          },
+          {
+            prompt: "What major engineering project in Australia utilized granite quarried and cut by Scottish stonemasons from Aberdeen?",
+            options: ["The Sydney Harbour Bridge Pylons", "The Melbourne Railway Station", "The Canberra Parliament House", "The Perth Harbor Docks"],
+            correctIndex: 0,
+            debrief: "Aberdeen stonemasons emigrated to Australia to quarry and cut granite blocks specifically for the iconic Sydney Harbour Bridge pylons."
+          },
+          {
+            prompt: "In 1882, which Scot successfully pioneered the first shipment of frozen meat sent from New Zealand to Britain?",
+            options: ["William Davidson", "Andrew Carnegie", "Sir John A. Macdonald", "Henry Niccol"],
+            correctIndex: 0,
+            debrief: "William Davidson organized the historic 1882 voyage of the ship 'Dunedin', successfully transporting frozen lamb from New Zealand to Britain."
+          },
+          {
+            prompt: "Which British government act in 1922 provided loans and grants to assist Scots in emigrating and retraining abroad?",
+            options: ["The Empire Settlement Act 1922", "The Colonial Land Act", "The Overseas Farmers Act", "The Migration Assistance Bill"],
+            correctIndex: 0,
+            debrief: "The Empire Settlement Act 1922 allocated millions of pounds in government loans and passage grants to encourage British settlers to move to Empire dominions."
+          },
+          {
+            prompt: "How many handloom weavers, displaced by industrial machinery in Scotland, were assisted to emigrate to Canada?",
+            options: ["At least 20,000 weavers", "Around 1,000 weavers", "Over 100,000 weavers", "Fewer than 500 weavers"],
+            correctIndex: 0,
+            debrief: "Industrial power looms ruined handloom weaving in Scotland; wealthy donors and government schemes funded the emigration of at least 20,000 weavers to Canada."
+          },
+          {
+            prompt: "Why did the sub-division of land force many Scottish Highland families to emigrate?",
+            options: ["Croft plots became too small to support a family or make a profit", "The government banned land inheritance", "Crofters were required to build stone mansions", "Land was flooded by artificial reservoirs"],
+            correctIndex: 0,
+            debrief: "Dividing crofts among multiple children resulted in plots too tiny to grow sufficient crops, forcing family members to seek new land abroad."
+          },
+          {
+            prompt: "What role did charities like Barnardo's and Quarrier's play in Scottish emigration?",
+            options: ["They sent orphan children to Canada and Australia for a new start", "They bought sheep farms for Highland landowners", "They built steamships in Glasgow", "They organized strikes in coal mines"],
+            correctIndex: 0,
+            debrief: "Philanthropic organizations like Barnardo's and Quarrier's assisted thousands of orphaned or destitute children to emigrate to Canada and Australia."
+          },
+          {
+            prompt: "Why did the failure of the kelp and herring industries force Scots to leave their homes?",
+            options: ["Fishermen and gatherers lost their income and faced economic ruin", "The sea became too polluted for boats", "The government banned fish consumption", "Kelp was replaced by coal mining"],
+            correctIndex: 0,
+            debrief: "The collapse of kelp prices after the Napoleonic Wars and periodic failure of herring catches destroyed coastal Highland livelihoods."
+          },
+          {
+            prompt: "Why were letters sent home by successful emigrants a powerful pull factor for others in Scotland?",
+            options: ["Letters described cheap land, high wages, and successful new lives", "Letters contained free government money", "Letters were published by the King", "Letters promised free steamships for everyone"],
+            correctIndex: 0,
+            debrief: "Glowing letters from family members who succeeded abroad encouraged relatives in Scotland to follow them to North America or Australasia."
+          }
+        ]
+      },
+      {
+        bookletId: 4,
+        townName: "Empire Outpost City",
+        gymLeaderName: "Leader Governor",
+        badgeName: "Empire Badge",
+        badgeSymbol: "🌍",
+        questions: [
+          {
+            prompt: "Which Scottish-born politician served as Canada's very first Prime Minister?",
+            options: ["Sir John A. Macdonald", "Andrew Fisher", "Peter Fraser", "James Busby"],
+            correctIndex: 0,
+            debrief: "Sir John A. Macdonald, born in Glasgow, played a key role in Canadian Confederation and became Canada's first Prime Minister."
+          },
+          {
+            prompt: "What negative impact did Scottish and European land settlement in Canada have on First Nations people?",
+            options: ["First Nations were forced off ancestral lands onto cramped, unhygienic Reserves", "First Nations were forced to move to Scottish cities", "First Nations lost access to ocean fishing rights in Europe", "First Nations were forced to work in Dundee factories"],
+            correctIndex: 0,
+            debrief: "To make way for European settlers, indigenous First Nations populations were forcibly displaced onto poorly equipped Reserves where European diseases caused heavy casualties."
+          },
+          {
+            prompt: "Which Scot, who worked 12-hour days in Ayrshire coal mines as a child, emigrated to Australia and became Prime Minister three times?",
+            options: ["Andrew Fisher", "John Muir", "Andrew Carnegie", "George Stephen"],
+            correctIndex: 0,
+            debrief: "Andrew Fisher rose from working in Ayrshire mines as a child to serving as Prime Minister of Australia three times between 1908 and 1915."
+          },
+          {
+            prompt: "What conflict occurred in 1843 resulting in the massacre of 150 Aboriginal Australians by European settlers?",
+            options: ["The Warrigal Creek Massacre", "The Waitangi Conflict", "The Sydney Harbor Clash", "The Melbourne Station Raid"],
+            correctIndex: 0,
+            debrief: "The massacre at Warrigal Creek in 1843 highlighted the violent, brutal displacement and killing of Aboriginal Australians during colonial expansion."
+          },
+          {
+            prompt: "Why did the Treaty of Waitangi cause severe long-term misunderstanding between Scottish settlers and the Māori in New Zealand?",
+            options: ["The English and Māori versions had key translation differences regarding sovereignty and land ownership", "The treaty was written entirely in Gaelic", "The treaty banned Māori people from farming", "The treaty required all Māori to move to Scotland"],
+            correctIndex: 0,
+            debrief: "James Busby helped draft the treaty, but the Māori translation guaranteed chieftainship while the English version ceded complete sovereignty, creating conflicting legal promises."
+          },
+          {
+            prompt: "Which Scottish emigrant born in East Lothian helped found Yosemite National Park and successfully campaigned for wilderness preservation in America?",
+            options: ["John Muir", "Learmonth Dalrymple", "Henry Niccol", "John Smith"],
+            correctIndex: 0,
+            debrief: "John Muir became one of North America's most famous naturalists, founding the Sierra Club and persuading President Roosevelt to expand Yosemite National Park."
+          },
+          {
+            prompt: "What milestone in female education was achieved by Learmonth Dalrymple's campaigning in New Zealand?",
+            options: ["Otago Girls' High School was founded and the University of Otago accepted women in 1871", "Women were given free medical degrees in Edinburgh", "Girls were banned from working in agriculture", "New Zealand created the world's first primary school"],
+            correctIndex: 0,
+            debrief: "Learmonth Dalrymple successfully campaigned for Otago Girls' High School and persuaded the University of Otago to admit women in 1871."
+          },
+          {
+            prompt: "Which industrial giant born in Dunfermline built steel and railway empires in the USA and donated $350,000,000 to public libraries and schools?",
+            options: ["Andrew Carnegie", "Sir John A. Macdonald", "William Davidson", "George Stephen"],
+            correctIndex: 0,
+            debrief: "Andrew Carnegie emigrated from Dunfermline to the USA, made a massive fortune in steel, and donated $350 million to fund public libraries, schools, and peace causes."
+          },
+          {
+            prompt: "Which Scot helped establish New Zealand's shipbuilding industry in Auckland, constructing over 180 vessels between 1843 and 1887?",
+            options: ["Henry Niccol", "John Smith", "James Busby", "Peter Fraser"],
+            correctIndex: 0,
+            debrief: "Scottish immigrant Henry Niccol established a major shipyard in Auckland, building 180 ships that formed the backbone of New Zealand maritime transport."
+          },
+          {
+            prompt: "What major transcontinental infrastructure project in Canada was driven forward by Scot George Stephen?",
+            options: ["The Canadian Pacific Railway (CPR)", "The Trans-Canada Highway", "The St. Lawrence Seaway", "The Ottawa Canal System"],
+            correctIndex: 0,
+            debrief: "Scot George Stephen was president of the Canadian Pacific Railway, completing the vital transcontinental link that opened Western Canada to settlement."
+          }
+        ]
+      }
+    ];
+
+    /* Historical Companions (HistoriMons) to Capture */
+    const HISTORIMONS = [
+      { id: 1, bookletId: 1, name: "Navvie-Spud", sprite: "🥔", type: "Laborer", desc: "Symbolizes Irish workers who built Scotland's transport canals and railways." },
+      { id: 2, bookletId: 1, name: "Jute-Weaver", sprite: "🧵", type: "Trade", desc: "Represents the vital jute trade links between Calcutta and Dundee mills." },
+      { id: 3, bookletId: 2, name: "Nardini-Scoop", sprite: "🍦", type: "Culture", desc: "Honors Italian ice-cream peddlers and cafes that enriched Scottish culture." },
+      { id: 4, bookletId: 2, name: "Iron-Forge", sprite: "⚙️", type: "Industry", desc: "Symbolizes Lithuanian and Irish workers in Lanarkshire ironworks." },
+      { id: 5, bookletId: 3, name: "Thistle-Croft", sprite: "🌾", type: "Emigrant", desc: "Represents Highland crofters seeking new farming lands across the Empire." },
+      { id: 6, bookletId: 3, name: "Granite-Pylon", sprite: "🧱", type: "Mason", desc: "Honors Aberdeen stonemasons who cut granite for the Sydney Harbour Bridge." },
+      { id: 7, bookletId: 4, name: "Carnegie-Steel", sprite: "🏗️", type: "Pioneer", desc: "Inspired by Dunfermline's Andrew Carnegie and industrial innovation." },
+      { id: 8, bookletId: 4, name: "Muir-Falcon", sprite: "🦅", type: "Wilderness", desc: "Inspired by John Muir's conservation of Yosemite and natural wilderness." }
+    ];
+
+    /* ==========================================================================
+       2. GLOBAL GAME STATE & LOCALSTORAGE PERSISTENCE
+       ========================================================================== */
+    const STORAGE_KEY = "QS_HISTORY_QUEST_SAVE_V1";
+    let bookletsData = [];
+
+    let playerProfile = {
+      name: "Scholar",
+      skinColor: "#ffdbac",
+      hairColor: "#4a2e00",
+      outfitColor: "#0284c7",
+      hairStyle: "cap"
+    };
+
+    let playerPosition = { x: 3, y: 12 }; // Start near Town 1 (Newhaven Port)
+    let playerParty = [];
+    let playerBadges = {
+      portBadge: false,
+      guildBadge: false,
+      croftBadge: false,
+      empireBadge: false
+    };
+
+    let soundEnabled = true;
+
+    // Active Combat State
+    let currentWildCreature = null;
+    let currentWildQuestion = null;
+    let wildQuestionQueue = [];
+
+    let currentGymBookletIndex = 0;
+    let gymQuestionQueue = [];
+    let gymQueuePointer = 0;
+    let gymPlayerHp = 100;
+    let gymLeaderHp = 100;
+
+    function safeGetStorage(key) {
+      try {
+        const val = localStorage.getItem(key);
+        return val ? JSON.parse(val) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function safeSetStorage(key, val) {
+      try {
+        localStorage.setItem(key, JSON.stringify(val));
+      } catch (e) {}
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    /* ==========================================================================
+       3. WEB AUDIO SYNTHESIZER
+       ========================================================================== */
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundToggleBtn').textContent = soundEnabled ? "🔊 AUDIO: ON" : "🔇 AUDIO: OFF";
+      showToast(soundEnabled ? "Audio Effects On" : "Muted", "info");
+    }
+
+    function playAudio(type) {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        if (type === 'step') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(140, ctx.currentTime);
+          gain.gain.setValueAtTime(0.04, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.05);
+        } else if (type === 'encounter') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        } else if (type === 'capture') {
+          const now = ctx.currentTime;
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.12);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.1);
+            osc.stop(now + idx * 0.1 + 0.12);
+          });
+        } else if (type === 'wrong') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(90, ctx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.2);
+        }
+      } catch (e) {}
+    }
+
+    /* ==========================================================================
+       4. UI TOAST NOTIFICATIONS
+       ========================================================================== */
+    function showToast(msg, type = "info") {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      let bg = "bg-slate-900 border-yellow-400 text-yellow-300";
+      if (type === "success") bg = "bg-emerald-950 border-emerald-400 text-emerald-200";
+      if (type === "error") bg = "bg-rose-950 border-rose-400 text-rose-200";
+
+      toast.className = `px-3 py-2 rounded-lg border font-pixel text-[10px] shadow-2xl transition transform translate-y-2 opacity-0 flex items-center gap-2 ${bg}`;
+      toast.innerHTML = `<span>${type === 'success' ? '⭐' : 'ℹ'}</span> <span>${msg}</span>`;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    }
+
+    /* ==========================================================================
+       5. AVATAR DRAWING & CUSTOMIZATION
+       ========================================================================== */
+    function drawAvatarSprite(ctx, x, y, size, skin, hair, outfit, style) {
+      ctx.save();
+      // Body / Outfit
+      ctx.fillStyle = outfit;
+      ctx.fillRect(x + size * 0.25, y + size * 0.5, size * 0.5, size * 0.4);
+
+      // Head / Skin
+      ctx.fillStyle = skin;
+      ctx.fillRect(x + size * 0.3, y + size * 0.18, size * 0.4, size * 0.34);
+
+      // Eyes
+      ctx.fillStyle = "#0f380f";
+      ctx.fillRect(x + size * 0.38, y + size * 0.28, size * 0.08, size * 0.08);
+      ctx.fillRect(x + size * 0.54, y + size * 0.28, size * 0.08, size * 0.08);
+
+      // Hair / Hat Style
+      ctx.fillStyle = hair;
+      if (style === 'cap') {
+        ctx.fillRect(x + size * 0.22, y + size * 0.12, size * 0.56, size * 0.12);
+        ctx.fillRect(x + size * 0.45, y + size * 0.2, size * 0.35, size * 0.06);
+      } else if (style === 'short') {
+        ctx.fillRect(x + size * 0.28, y + size * 0.1, size * 0.44, size * 0.12);
+      } else if (style === 'long') {
+        ctx.fillRect(x + size * 0.26, y + size * 0.1, size * 0.48, size * 0.14);
+        ctx.fillRect(x + size * 0.24, y + size * 0.22, size * 0.1, size * 0.3);
+        ctx.fillRect(x + size * 0.66, y + size * 0.22, size * 0.1, size * 0.3);
+      } else if (style === 'bun') {
+        ctx.fillRect(x + size * 0.4, y + size * 0.04, size * 0.2, size * 0.12);
+        ctx.fillRect(x + size * 0.28, y + size * 0.14, size * 0.44, size * 0.1);
+      }
+
+      // Legs / Shoes
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(x + size * 0.3, y + size * 0.88, size * 0.16, size * 0.12);
+      ctx.fillRect(x + size * 0.54, y + size * 0.88, size * 0.16, size * 0.12);
+
+      ctx.restore();
+    }
+
+    function updateAvatarPreview() {
+      playerProfile.name = document.getElementById('custName').value || "Scholar";
+      playerProfile.skinColor = document.getElementById('custSkinColor').value;
+      playerProfile.hairColor = document.getElementById('custHairColor').value;
+      playerProfile.outfitColor = document.getElementById('custOutfitColor').value;
+      playerProfile.hairStyle = document.getElementById('custHairStyle').value;
+
+      document.getElementById('previewNameLabel').textContent = playerProfile.name;
+
+      const cvs = document.getElementById('avatarPreviewCanvas');
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      drawAvatarSprite(ctx, 0, 0, 96, playerProfile.skinColor, playerProfile.hairColor, playerProfile.outfitColor, playerProfile.hairStyle);
+    }
+
+    /* ==========================================================================
+       6. 2D OVERWORLD MAP ENGINE (HTML5 CANVAS GRID)
+       ========================================================================== */
+    const MAP_COLS = 20;
+    const MAP_ROWS = 15;
+    const TILE_SIZE = 32;
+
+    // 0: Path, 1: Water/Wall, 2: Tall Grass, 3: Gym Building, 4: Gate/Lock
+    const OVERWORLD_GRID = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,3,0,0,1,1,1,1,3,0,0,1,1,1,1,3,0,0,1,1],
+      [1,0,0,0,0,0,4,0,0,0,0,0,4,0,0,0,0,0,1,1],
+      [1,0,2,2,0,1,1,0,2,2,0,1,1,0,2,2,0,0,1,1],
+      [1,0,2,2,0,1,1,0,2,2,0,1,1,0,2,2,0,0,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+      [1,1,1,4,1,1,1,1,1,4,1,1,1,1,1,4,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+      [1,0,2,2,0,1,1,0,2,2,0,1,1,0,2,2,0,0,1,1],
+      [1,0,2,2,0,1,1,0,2,2,0,1,1,0,2,2,0,0,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+      [1,1,1,1,1,1,1,1,3,0,0,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+      [1,0,2,2,2,0,0,0,2,2,2,0,0,0,2,2,2,0,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    function renderWorldCanvas() {
+      const cvs = document.getElementById('worldCanvas');
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      for (let r = 0; r < MAP_ROWS; r++) {
+        for (let c = 0; c < MAP_COLS; c++) {
+          const tile = OVERWORLD_GRID[r][c];
+          const x = c * TILE_SIZE;
+          const y = r * TILE_SIZE;
+
+          if (tile === 0) {
+            // Path / Ground
+            ctx.fillStyle = "#306230";
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#8bac0f";
+            ctx.fillRect(x + 4, y + 4, 2, 2);
+          } else if (tile === 1) {
+            // Wall / Water
+            ctx.fillStyle = "#0f380f";
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+          } else if (tile === 2) {
+            // Tall Grass (Encounters)
+            ctx.fillStyle = "#306230";
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#9bbc0f";
+            ctx.fillRect(x + 4, y + 6, 6, 20);
+            ctx.fillRect(x + 14, y + 2, 6, 24);
+            ctx.fillRect(x + 22, y + 8, 6, 18);
+          } else if (tile === 3) {
+            // Gym Building
+            ctx.fillStyle = "#b8860b";
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#f7d51d";
+            ctx.fillRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+            ctx.fillStyle = "#0f380f";
+            ctx.font = "12px sans-serif";
+            ctx.fillText("🏛️", x + 6, y + 22);
+          } else if (tile === 4) {
+            // Gate / Lock
+            ctx.fillStyle = "#8b0000";
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "10px sans-serif";
+            ctx.fillText("🚧", x + 8, y + 20);
+          }
+        }
+      }
+
+      // Draw Player Character
+      drawAvatarSprite(ctx, playerPosition.x * TILE_SIZE, playerPosition.y * TILE_SIZE, TILE_SIZE, playerProfile.skinColor, playerProfile.hairColor, playerProfile.outfitColor, playerProfile.hairStyle);
+    }
+
+    function handleDpadInput(dir) {
+      let dx = 0, dy = 0;
+      if (dir === 'up') dy = -1;
+      if (dir === 'down') dy = 1;
+      if (dir === 'left') dx = -1;
+      if (dir === 'right') dx = 1;
+
+      movePlayer(dx, dy);
+    }
+
+    function movePlayer(dx, dy) {
+      const newX = playerPosition.x + dx;
+      const newY = playerPosition.y + dy;
+
+      if (newX < 0 || newX >= MAP_COLS || newY < 0 || newY >= MAP_ROWS) return;
+
+      const targetTile = OVERWORLD_GRID[newY][newX];
+      if (targetTile === 1) return; // Wall collision
+
+      // Gate locking check
+      if (targetTile === 4) {
+        if (newX < 8 && !playerBadges.portBadge) {
+          showToast("Port Badge required to pass this gate!", "error");
+          return;
+        }
+        if (newX >= 8 && newX < 14 && !playerBadges.guildBadge) {
+          showToast("Guild Badge required to pass this gate!", "error");
+          return;
+        }
+        if (newX >= 14 && !playerBadges.croftBadge) {
+          showToast("Croft Badge required to pass this gate!", "error");
+          return;
+        }
+      }
+
+      playerPosition.x = newX;
+      playerPosition.y = newY;
+      playAudio('step');
+      renderWorldCanvas();
+      checkTileEvents(targetTile);
+      saveGameState();
+    }
+
+    function checkTileEvents(tile) {
+      // Determine Town Zone by X Coordinate
+      let bookletIdx = 0;
+      if (playerPosition.x < 6) bookletIdx = 0;
+      else if (playerPosition.x >= 6 && playerPosition.x < 12) bookletIdx = 1;
+      else if (playerPosition.x >= 12 && playerPosition.x < 16) bookletIdx = 2;
+      else bookletIdx = 3;
+
+      const booklet = bookletsData[bookletIdx];
+      document.getElementById('currentTownLabel').textContent = `${booklet.townName} (Booklet ${booklet.bookletId})`;
+
+      // Gym Entry Event
+      if (tile === 3) {
+        startGymBattle(bookletIdx);
+        return;
+      }
+
+      // Tall Grass Wild Encounter Event (18% Chance)
+      if (tile === 2) {
+        if (Math.random() < 0.18) {
+          triggerWildEncounter(bookletIdx + 1);
+        }
+      }
+    }
+
+    /* ==========================================================================
+       7. WILD HISTORIMON BATTLE & CAPTURE LOGIC
+       ========================================================================== */
+    function triggerWildEncounter(bookletId) {
+      playAudio('encounter');
+      const candidates = HISTORIMONS.filter(h => h.bookletId === bookletId);
+      currentWildCreature = candidates[Math.floor(Math.random() * candidates.length)];
+
+      const bData = bookletsData.find(b => b.bookletId === bookletId);
+      const qList = bData ? bData.questions : bookletsData[0].questions;
+      currentWildQuestion = qList[Math.floor(Math.random() * qList.length)];
+
+      document.getElementById('wildCreatureSprite').textContent = currentWildCreature.sprite;
+      document.getElementById('wildCreatureName').textContent = currentWildCreature.name;
+      document.getElementById('wildCreatureDesc').textContent = currentWildCreature.desc;
+      document.getElementById('wildAreaBookletBadge').textContent = `BOOKLET ${bookletId}`;
+
+      document.getElementById('wildQuestionPrompt').textContent = currentWildQuestion.prompt;
+      document.getElementById('wildDebriefBox').classList.add('hidden');
+
+      const shuffledOpts = shuffleArray(currentWildQuestion.options.map((optText, idx) => ({
+        text: optText,
+        isCorrect: (idx === currentWildQuestion.correctIndex)
+      })));
+
+      let html = '';
+      shuffledOpts.forEach((opt, idx) => {
+        html += `
+          <button onclick="handleWildAnswerChoice(${opt.isCorrect})" class="pixel-btn text-left p-3 text-xs rounded border border-emerald-400">
+            ${String.fromCharCode(65 + idx)}. ${opt.text}
+          </button>
+        `;
+      });
+
+      document.getElementById('wildOptionsGrid').innerHTML = html;
+      document.getElementById('wildEncounterModal').classList.remove('hidden');
+    }
+
+    function handleWildAnswerChoice(isCorrect) {
+      const optionsGrid = document.getElementById('wildOptionsGrid');
+      optionsGrid.innerHTML = '';
+
+      if (isCorrect) {
+        playAudio('capture');
+        if (playerParty.length < 6 && !playerParty.some(p => p.id === currentWildCreature.id)) {
+          playerParty.push(currentWildCreature);
+          updatePartyBadgeCount();
+          showToast(`SUCCESS! Captured ${currentWildCreature.name}!`, "success");
+        } else {
+          showToast(`${currentWildCreature.name} research verified!`, "success");
+        }
+      } else {
+        playAudio('wrong');
+        showToast("Knowledge Ball missed! Review the debrief.", "error");
+      }
+
+      document.getElementById('wildDebriefText').textContent = currentWildQuestion.debrief;
+      document.getElementById('wildDebriefBox').classList.remove('hidden');
+      saveGameState();
+    }
+
+    function finishWildEncounter() {
+      document.getElementById('wildEncounterModal').classList.add('hidden');
+    }
+
+    /* ==========================================================================
+       8. GYM LEADER BATTLE SYSTEM (10 QUESTIONS)
+       ========================================================================== */
+    function startGymBattle(bookletIdx) {
+      currentGymBookletIndex = bookletIdx;
+      const booklet = bookletsData[bookletIdx];
+
+      gymPlayerHp = 100;
+      gymLeaderHp = 100;
+      gymQuestionQueue = shuffleArray(booklet.questions.map((_, idx) => idx));
+      gymQueuePointer = 0;
+
+      document.getElementById('gymPlayerName').textContent = playerProfile.name;
+      document.getElementById('gymLeaderName').textContent = booklet.gymLeaderName;
+      updateGymHpBars();
+
+      document.getElementById('gymBattleModal').classList.remove('hidden');
+      loadGymQuestion();
+    }
+
+    function updateGymHpBars() {
+      document.getElementById('gymPlayerHpText').textContent = `${Math.max(0, gymPlayerHp)} HP`;
+      document.getElementById('gymPlayerHpBar').style.width = `${Math.max(0, gymPlayerHp)}%`;
+
+      document.getElementById('gymLeaderHpText').textContent = `${Math.max(0, gymLeaderHp)} HP`;
+      document.getElementById('gymLeaderHpBar').style.width = `${Math.max(0, gymLeaderHp)}%`;
+    }
+
+    function loadGymQuestion() {
+      const booklet = bookletsData[currentGymBookletIndex];
+
+      if (gymQueuePointer >= 10 || gymQueuePointer >= gymQuestionQueue.length) {
+        finishGymBattle(gymLeaderHp <= 0 || gymPlayerHp > gymLeaderHp);
+        return;
+      }
+
+      const qIndex = gymQuestionQueue[gymQueuePointer];
+      const qObj = booklet.questions[qIndex];
+
+      document.getElementById('gymQuestionCounter').textContent = `QUESTION ${gymQueuePointer + 1} OF 10`;
+      document.getElementById('gymQuestionPrompt').textContent = qObj.prompt;
+      document.getElementById('gymDebriefBox').classList.add('hidden');
+
+      const shuffledOpts = shuffleArray(qObj.options.map((optText, idx) => ({
+        text: optText,
+        isCorrect: (idx === qObj.correctIndex)
+      })));
+
+      let html = '';
+      shuffledOpts.forEach((opt, idx) => {
+        html += `
+          <button onclick="handleGymAnswerChoice(${opt.isCorrect})" class="pixel-btn text-left p-3 text-xs rounded border border-emerald-400">
+            ${String.fromCharCode(65 + idx)}. ${opt.text}
+          </button>
+        `;
+      });
+
+      document.getElementById('gymOptionsGrid').innerHTML = html;
+    }
+
+    function handleGymAnswerChoice(isCorrect) {
+      const booklet = bookletsData[currentGymBookletIndex];
+      const qIndex = gymQuestionQueue[gymQueuePointer];
+      const qObj = booklet.questions[qIndex];
+
+      document.getElementById('gymOptionsGrid').innerHTML = '';
+
+      if (isCorrect) {
+        playAudio('capture');
+        gymLeaderHp -= 10;
+        showToast("CRITICAL STRIKE! Leader HP reduced!", "success");
+      } else {
+        playAudio('wrong');
+        gymPlayerHp -= 15;
+        showToast("COUNTERED! You took 15 HP damage!", "error");
+      }
+
+      updateGymHpBars();
+
+      document.getElementById('gymDebriefText').textContent = qObj.debrief;
+      document.getElementById('gymDebriefBox').classList.remove('hidden');
+    }
+
+    function advanceGymQuestion() {
+      gymQueuePointer++;
+      if (gymLeaderHp <= 0 || gymPlayerHp <= 0 || gymQueuePointer >= 10) {
+        finishGymBattle(gymLeaderHp < gymPlayerHp);
+      } else {
+        loadGymQuestion();
+      }
+    }
+
+    function finishGymBattle(playerWon) {
+      document.getElementById('gymBattleModal').classList.add('hidden');
+
+      if (playerWon) {
+        playAudio('capture');
+        if (currentGymBookletIndex === 0) playerBadges.portBadge = true;
+        if (currentGymBookletIndex === 1) playerBadges.guildBadge = true;
+        if (currentGymBookletIndex === 2) playerBadges.croftBadge = true;
+        if (currentGymBookletIndex === 3) playerBadges.empireBadge = true;
+
+        updatePartyBadgeCount();
+        saveGameState();
+        showToast(`VICTORY! Awarded the ${bookletsData[currentGymBookletIndex].badgeName}! Gate unlocked!`, "success");
+      } else {
+        showToast("Gym battle lost. Re-study the debriefs and try again!", "error");
+      }
+    }
+
+    /* ==========================================================================
+       9. PARTY & BADGES UI
+       ========================================================================== */
+    function openPartyModal() {
+      const partyGrid = document.getElementById('partyGridContainer');
+      let html = '';
+
+      for (let i = 0; i < 6; i++) {
+        if (i < playerParty.length) {
+          const item = playerParty[i];
+          html += `
+            <div class="bg-slate-950 p-3 rounded-lg border border-yellow-500/50 flex flex-col items-center text-center">
+              <span class="text-3xl mb-1">${item.sprite}</span>
+              <span class="font-pixel text-[10px] text-retroYellow">${item.name}</span>
+              <span class="text-[9px] text-slate-400 font-serif mt-1">${item.type}</span>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="bg-slate-950/40 p-3 rounded-lg border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-600 font-pixel text-[10px] min-h-[90px]">
+              EMPTY
+            </div>
+          `;
+        }
+      }
+      partyGrid.innerHTML = html;
+
+      // Badges List
+      const badgesContainer = document.getElementById('partyBadgesList');
+      badgesContainer.innerHTML = `
+        <div class="flex items-center gap-2 p-2 rounded bg-slate-950 ${playerBadges.portBadge ? 'text-yellow-300 border border-yellow-500/50' : 'text-slate-600'}">
+          <span>⚓</span> <span>Port Badge</span>
+        </div>
+        <div class="flex items-center gap-2 p-2 rounded bg-slate-950 ${playerBadges.guildBadge ? 'text-yellow-300 border border-yellow-500/50' : 'text-slate-600'}">
+          <span>🏭</span> <span>Guild Badge</span>
+        </div>
+        <div class="flex items-center gap-2 p-2 rounded bg-slate-950 ${playerBadges.croftBadge ? 'text-yellow-300 border border-yellow-500/50' : 'text-slate-600'}">
+          <span>🏔️</span> <span>Croft Badge</span>
+        </div>
+        <div class="flex items-center gap-2 p-2 rounded bg-slate-950 ${playerBadges.empireBadge ? 'text-yellow-300 border border-yellow-500/50' : 'text-slate-600'}">
+          <span>🌍</span> <span>Empire Badge</span>
+        </div>
+      `;
+
+      document.getElementById('partyModal').classList.remove('hidden');
+    }
+
+    function closePartyModal() {
+      document.getElementById('partyModal').classList.add('hidden');
+    }
+
+    function updatePartyBadgeCount() {
+      document.getElementById('partyCountBadge').textContent = playerParty.length;
+
+      const container = document.getElementById('badgeDisplayContainer');
+      container.innerHTML = `
+        <span title="Port Badge" class="${playerBadges.portBadge ? 'opacity-100 text-yellow-300' : 'opacity-30'}">⚓</span>
+        <span title="Guild Badge" class="${playerBadges.guildBadge ? 'opacity-100 text-yellow-300' : 'opacity-30'}">🏭</span>
+        <span title="Croft Badge" class="${playerBadges.croftBadge ? 'opacity-100 text-yellow-300' : 'opacity-30'}">🏔️</span>
+        <span title="Empire Badge" class="${playerBadges.empireBadge ? 'opacity-100 text-yellow-300' : 'opacity-30'}">🌍</span>
+      `;
+    }
+
+    /* ==========================================================================
+       10. TEACHER EDITOR SUITE
+       ========================================================================== */
+    function openTeacherModal() {
+      document.getElementById('teacherJsonArea').value = JSON.stringify(bookletsData, null, 2);
+      document.getElementById('teacherModal').classList.remove('hidden');
+    }
+
+    function closeTeacherModal() {
+      document.getElementById('teacherModal').classList.add('hidden');
+    }
+
+    function saveTeacherDataset() {
+      try {
+        const parsed = JSON.parse(document.getElementById('teacherJsonArea').value);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          bookletsData = parsed;
+          safeSetStorage("QS_BOOKLETS_CUSTOM", bookletsData);
+          closeTeacherModal();
+          showToast("QS Dataset updated!", "success");
+        }
+      } catch (e) {
+        showToast("JSON Syntax Error!", "error");
+      }
+    }
+
+    function resetDefaultTeacherDataset() {
+      bookletsData = [...DEFAULT_BOOKLETS_DATA];
+      safeSetStorage("QS_BOOKLETS_CUSTOM", bookletsData);
+      closeTeacherModal();
+      showToast("Default dataset restored.", "success");
+    }
+
+    /* ==========================================================================
+       11. SAVE / LOAD STATE & GAME INIT
+       ========================================================================== */
+    function saveGameState() {
+      const state = {
+        profile: playerProfile,
+        pos: playerPosition,
+        party: playerParty,
+        badges: playerBadges
+      };
+      safeSetStorage(STORAGE_KEY, state);
+    }
+
+    function loadGameState() {
+      const saved = safeGetStorage(STORAGE_KEY);
+      if (saved) {
+        if (saved.profile) playerProfile = saved.profile;
+        if (saved.pos) playerPosition = saved.pos;
+        if (saved.party) playerParty = saved.party;
+        if (saved.badges) playerBadges = saved.badges;
+      }
+
+      const customBooklets = safeGetStorage("QS_BOOKLETS_CUSTOM");
+      if (customBooklets && Array.isArray(customBooklets)) {
+        bookletsData = customBooklets;
+      } else {
+        bookletsData = [...DEFAULT_BOOKLETS_DATA];
+      }
+    }
+
+    function startGameWorld() {
+      saveGameState();
+      document.getElementById('customizationScreen').classList.add('hidden');
+      document.getElementById('gameWorldScreen').classList.remove('hidden');
+      updatePartyBadgeCount();
+      renderWorldCanvas();
+
+      // Keyboard Controls
+      window.addEventListener('keydown', (e) => {
+        if (document.getElementById('gameWorldScreen').classList.contains('hidden')) return;
+        if (['ArrowUp', 'KeyW'].includes(e.code)) movePlayer(0, -1);
+        if (['ArrowDown', 'KeyS'].includes(e.code)) movePlayer(0, 1);
+        if (['ArrowLeft', 'KeyA'].includes(e.code)) movePlayer(-1, 0);
+        if (['ArrowRight', 'KeyD'].includes(e.code)) movePlayer(1, 0);
+      });
+    }
+
+    function init() {
+      loadGameState();
+      updateAvatarPreview();
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(init, 1);
+    } else {
+      document.addEventListener('DOMContentLoaded', init);
+    }
+  </script>
+</body>
+</html>
